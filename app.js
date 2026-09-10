@@ -22,12 +22,19 @@ const userRouter = require("./routes/user.js");
 
 const dbUrl = process.env.ATLASDB_URL;
 
-main().then(() => {
-    console.log("connected to DB");
-})
-.catch((err) => {
-    console.log(err);
-});
+const PORT = process.env.PORT || 8080;
+
+main()
+    .then(() => {
+        console.log("connected to DB");
+
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`server is listening to port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.log("Database connection error:", err);
+    });
 
 
 async function main() {
@@ -40,6 +47,10 @@ app.use(express.urlencoded({extended: true}));
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+    res.redirect("/listings");
+});
 
 const store = MongoStore.create({
     mongoUrl: dbUrl,
@@ -65,13 +76,6 @@ const sessionOptions = {
     },
 };
 
-
-// app.get("/", (req,res)=> {
-//     res.send("Hi, I am root");
-// });
-
-
-
 app.use(session(sessionOptions));
 app.use(flash());
 
@@ -86,7 +90,6 @@ app.use((req,res,next)=> {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
     res.locals.currUser = req.user; 
-    // console.log(res.locals.success);
     next();  // required to pass control to next middleware or route handler
 });
 
@@ -116,6 +119,3 @@ app.use((err,req,res,next)=> {
     // res.status(statusCode).send(message);
 });
 
-app.listen(8080, () => {
-    console.log("server is listening to port 8080");
-});
